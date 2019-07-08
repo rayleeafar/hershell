@@ -22,6 +22,9 @@ linux32:
 linux64:
 	GOOS=linux GOARCH=amd64 ${BUILD} ${LINUX_LDFLAGS} -o ${OUT_LINUX} ${SRC}
 
+arm7:
+	GOOS=linux GOARCH=arm GOARM=7 ${BUILD} ${LINUX_LDFLAGS} -o ${OUT_LINUX} ${SRC}
+
 windows32:
 	GOOS=windows GOARCH=386 ${BUILD} ${WIN_LDFLAGS} -o ${OUT_WINDOWS} ${SRC}
 
